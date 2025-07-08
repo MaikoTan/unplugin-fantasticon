@@ -1,28 +1,13 @@
-# unplugin-starter
+# unplugin-fantasticon
 
-[![NPM version](https://img.shields.io/npm/v/unplugin-starter?color=a1b858&label=)](https://www.npmjs.com/package/unplugin-starter)
+[![NPM version](https://img.shields.io/npm/v/unplugin-fantasticon?color=a1b858&label=)](https://www.npmjs.com/package/unplugin-fantasticon)
 
-Starter template for [unplugin](https://github.com/unjs/unplugin).
-
-## Template Usage
-
-To use this template, clone it down using:
-
-```bash
-npx degit unplugin/unplugin-starter my-unplugin
-```
-
-And do a global replacement of `unplugin-starter` with your plugin name.
-
-Then you can start developing your unplugin 🔥
-
-To test your plugin, run: `pnpm run dev`
-To release a new version, run: `pnpm run release`
+A [unplugin](https://github.com/unjs/unplugin) plugin to generate iconfonts from SVGs using [fantasticon](https://github.com/twbs/fantasticon).
 
 ## Install
 
 ```bash
-npm i unplugin-starter
+npm i unplugin-fantasticon
 ```
 
 <details>
@@ -30,11 +15,11 @@ npm i unplugin-starter
 
 ```ts
 // vite.config.ts
-import Starter from 'unplugin-starter/vite'
+import Fantasticon from 'unplugin-fantasticon/vite'
 
 export default defineConfig({
   plugins: [
-    Starter({ /* options */ }),
+    Fantasticon({ /* options */ }),
   ],
 })
 ```
@@ -48,11 +33,11 @@ Example: [`playground/`](./playground/)
 
 ```ts
 // rollup.config.js
-import Starter from 'unplugin-starter/rollup'
+import Fantasticon from 'unplugin-fantasticon/rollup'
 
 export default {
   plugins: [
-    Starter({ /* options */ }),
+    Fantasticon({ /* options */ }),
   ],
 }
 ```
@@ -67,7 +52,7 @@ export default {
 module.exports = {
   /* ... */
   plugins: [
-    require('unplugin-starter/webpack')({ /* options */ })
+    require('unplugin-fantasticon/webpack')({ /* options */ })
   ]
 }
 ```
@@ -81,7 +66,7 @@ module.exports = {
 // nuxt.config.js
 export default defineNuxtConfig({
   modules: [
-    ['unplugin-starter/nuxt', { /* options */ }],
+    ['unplugin-fantasticon/nuxt', { /* options */ }],
   ],
 })
 ```
@@ -98,7 +83,7 @@ export default defineNuxtConfig({
 module.exports = {
   configureWebpack: {
     plugins: [
-      require('unplugin-starter/webpack')({ /* options */ }),
+      require('unplugin-fantasticon/webpack')({ /* options */ }),
     ],
   },
 }
@@ -112,10 +97,10 @@ module.exports = {
 ```ts
 // esbuild.config.js
 import { build } from 'esbuild'
-import Starter from 'unplugin-starter/esbuild'
+import Fantasticon from 'unplugin-fantasticon/esbuild'
 
 build({
-  plugins: [Starter()],
+  plugins: [Fantasticon()],
 })
 ```
 

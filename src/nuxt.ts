@@ -9,7 +9,7 @@ export interface ModuleOptions extends Options {
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {
-    name: 'nuxt-unplugin-starter',
+    name: 'nuxt-unplugin-fantasticon',
     configKey: 'unpluginStarter',
   },
   defaults: {
