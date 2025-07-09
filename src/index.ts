@@ -20,7 +20,7 @@ const defaultOptions = {
   assetTypes: ['css', 'html'] as import('fantasticon').OtherAssetType[],
 } satisfies Options
 
-function assetBuilder(config: RunnerOptions) {
+function assetBuilder(config: RunnerOptions, generateFonts = defaultOptions.generateFonts) {
   let building = false;
   let assets: Partial<Record<import('fantasticon').AssetType, string | Buffer>> = {};
   let watcher: FSWatcher | undefined = undefined;
@@ -127,7 +127,7 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = 
 
   let wss = undefined as WebSocketServer | undefined
 
-  const builder = assetBuilder(config)
+  const builder = assetBuilder(config, generateFonts)
 
   return {
     name,
