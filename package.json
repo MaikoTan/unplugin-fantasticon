@@ -1,24 +1,27 @@
 {
   "name": "unplugin-fantasticon",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "packageManager": "pnpm@10.11.0",
   "description": "",
   "license": "MIT",
-  "homepage": "https://github.com/antfu/unplugin-fantasticon#readme",
+  "homepage": "https://github.com/MaikoTan/unplugin-fantasticon#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/antfu/unplugin-fantasticon.git"
+    "url": "git+https://github.com/MaikoTan/unplugin-fantasticon.git"
   },
   "bugs": {
-    "url": "https://github.com/antfu/unplugin-fantasticon/issues"
+    "url": "https://github.com/MaikoTan/unplugin-fantasticon/issues"
   },
   "keywords": [
     "unplugin",
     "vite",
     "webpack",
     "rollup",
-    "transform"
+    "transform",
+    "icon",
+    "iconfont",
+    "fantasticon"
   ],
   "exports": {
     ".": "./dist/index.js",
@@ -90,6 +93,7 @@
     }
   },
   "dependencies": {
+    "fantasticon": "npm:@twbs/fantasticon@^3.1.0",
     "unplugin": "^2.3.4"
   },
   "devDependencies": {
