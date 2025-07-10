@@ -7,7 +7,15 @@ A [unplugin](https://github.com/unjs/unplugin) plugin to generate iconfonts from
 ## Install
 
 ```bash
-npm i unplugin-fantasticon
+npm i -D unplugin-fantasticon
+```
+
+```bash
+yarn add -D unplugin-fantasticon
+```
+
+```bash
+pnpm add -D unplugin-fantasticon
 ```
 
 <details>
