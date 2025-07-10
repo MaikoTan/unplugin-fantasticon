@@ -69,9 +69,6 @@ importers:
       '@rollup/plugin-commonjs':
         specifier: ^28.0.6
         version: 28.0.6(rollup@4.41.0)
-      '@rollup/plugin-html':
-        specifier: ^2.0.0
-        version: 2.0.0(rollup@4.41.0)
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.1
         version: 16.0.1(rollup@4.41.0)
@@ -713,15 +710,6 @@ packages:
     engines: {node: '>=16.0.0 || 14 >= 14.17'}
     peerDependencies:
       rollup: ^2.68.0||^3.0.0||^4.0.0
-    peerDependenciesMeta:
-      rollup:
-        optional: true
-
-  '@rollup/plugin-html@2.0.0':
-    resolution: {integrity: sha512-6S0ezKfDRw5FvHk3xm1T/eXP9IlLf82zmV+z2V1/yQL5hXwIUL/Gl2RrNMMIe2rt85rk6+0smvSAtjfTLGylDQ==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
     peerDependenciesMeta:
       rollup:
         optional: true
@@ -4571,10 +4559,6 @@ snapshots:
       is-reference: 1.2.1
       magic-string: 0.30.17
       picomatch: 4.0.2
-    optionalDependencies:
-      rollup: 4.41.0
-
-  '@rollup/plugin-html@2.0.0(rollup@4.41.0)':
     optionalDependencies:
       rollup: 4.41.0
 
