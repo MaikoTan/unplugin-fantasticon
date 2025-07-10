@@ -1,10 +1,17 @@
 import { defineConfig } from 'vite'
 import Inspect from 'vite-plugin-inspect'
-import Unplugin from '../src/vite'
+import Fantasticon from '../src/vite'
 
 export default defineConfig({
   plugins: [
     Inspect(),
-    Unplugin(),
+    Fantasticon({
+      name: 'iconfont',
+      inputDir: 'src/icons',
+      outputDir: 'dist/fonts',
+      fontTypes: ['woff2', 'woff', 'ttf'],
+      assetTypes: ['css', 'html'],
+      injectHtml: true,
+    }),
   ],
 })
