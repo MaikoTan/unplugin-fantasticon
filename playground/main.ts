@@ -1,1 +1,1 @@
-document.getElementById('app')!.innerHTML = '__UNPLUGIN__'
+import 'fantasticon:iconfont.css'

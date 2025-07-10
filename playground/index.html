@@ -4,9 +4,31 @@
   <meta charset="UTF-8">
   <link rel="icon" href="/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unplugin Fantasticon Playground</title>
+  <style>
+    .icons {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .icons i {
+      font-size: 24px;
+      color: #333;
+    }
+  </style>
 </head>
 <body>
-  <div id="app"></div>
+  <div id="app">
+    <div class="icons">
+      <i class="icon-arrow-left"></i>
+      <i class="icon-arrow-right"></i>
+      <i class="icon-arrow-up"></i>
+      <i class="icon-arrow-down"></i>
+      <i class="icon-check"></i>
+    </div>
+  </div>
   <a href="/__inspect/#/module?id=./main.ts&index=2" target="_blank" style="text-decoration: none; margin-top:10px; display: block;">visit /__inspect/ to inspect the intermediate state</a>
   <script type="module" src="./main.ts"></script>
 </body>

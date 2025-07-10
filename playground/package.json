@@ -2,9 +2,18 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "nodemon -w '../src/**/*.ts' -e .ts -x vite"
+    "dev": "pnpm run dev:vite",
+    "dev:vite": "nodemon -w '../src/**/*.ts' -e .ts -x vite",
+    "dev:rollup": "rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript --watch"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "rollup": "^4.41.0",
+    "rollup-plugin-livereload": "^2.0.5",
+    "rollup-plugin-serve": "^3.0.0",
+    "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vite-plugin-inspect": "^11.1.0"
   }
