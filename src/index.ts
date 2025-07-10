@@ -1,12 +1,15 @@
-import { FSWatcher, watch as fsWatch, promises as fs } from 'fs'
-import { dirname, normalize, relative } from 'path'
-
-import { generateFonts, type RunnerOptions } from 'fantasticon'
-import { createUnplugin } from 'unplugin'
+import type { RunnerOptions } from 'fantasticon'
+import type { Buffer } from 'node:buffer'
+import type { FSWatcher } from 'node:fs'
 
 import type { UnpluginFactory } from 'unplugin'
-import type { Options } from './types'
 import type { WebSocketServer } from 'vite'
+import type { Options } from './types'
+import { promises as fs, watch as fsWatch } from 'node:fs'
+
+import { dirname, normalize, relative } from 'node:path'
+import { generateFonts } from 'fantasticon'
+import { createUnplugin } from 'unplugin'
 
 const defaultOptions = {
   generateFonts,
@@ -20,85 +23,95 @@ const defaultOptions = {
   assetTypes: ['css', 'html'] as import('fantasticon').OtherAssetType[],
 } satisfies Options
 
-function assetBuilder(config: RunnerOptions, generateFonts = defaultOptions.generateFonts) {
-  let building = false;
-  let assets: Partial<Record<import('fantasticon').AssetType, string | Buffer>> = {};
-  let watcher: FSWatcher | undefined = undefined;
+export interface AssetBuilder {
+  build: (writeToDisk?: boolean) => Promise<Partial<Record<import('fantasticon').AssetType, string | Buffer>>>
+  get: (assetType: string) => string | Buffer | undefined
+  watch: (ws: () => WebSocketServer | undefined, event: string) => () => void
+  end: () => void
+  waitForBuild: () => Promise<void>
+}
 
-  async function build(writeToDisk = false) {
-    const cfg = { ...config };
+function assetBuilder(config: RunnerOptions, generateFonts = defaultOptions.generateFonts): AssetBuilder {
+  let building = false
+  let assets: Partial<Record<import('fantasticon').AssetType, string | Buffer>> = {}
+  let watcher: FSWatcher | undefined
+
+  async function build(writeToDisk = false): Promise<Partial<Record<import('fantasticon').AssetType, string | Buffer>>> {
+    const cfg = { ...config }
     if (building) {
-      // eslint-disable-next-line no-console
-      console.warn("[fantasticon] Already building, skipping...");
-      return assets;
+      console.warn('[fantasticon] Already building, skipping...')
+      return assets
     }
-    building = true;
-    if (!writeToDisk) cfg.outputDir = undefined as any;
-    else await fs.mkdir(cfg.outputDir, { recursive: true });
-    cfg.inputDir = relative(".", cfg.inputDir);
+    building = true
+    if (!writeToDisk)
+      cfg.outputDir = undefined as any
+    else await fs.mkdir(cfg.outputDir, { recursive: true })
+    cfg.inputDir = relative('.', cfg.inputDir)
     // eslint-disable-next-line no-console
-    console.log(`[fantasticon] Generating fonts from '${cfg.inputDir}'...`);
+    console.log(`[fantasticon] Generating fonts from '${cfg.inputDir}'...`)
 
-    const results = await generateFonts(cfg, writeToDisk);
-    assets = results.assetsOut;
+    const results = await generateFonts(cfg, writeToDisk)
+    assets = results.assetsOut
     if (assets.ts) {
-      const ts = assets.ts;
-      delete assets.ts;
-      const filePath = relative(".", `${cfg.outputDir}/${cfg.name}.ts`);
-      const dir = dirname(filePath);
-      await fs.mkdir(dir, { recursive: true });
-      await fs.writeFile(filePath, ts as string);
+      const ts = assets.ts
+      delete assets.ts
+      const filePath = relative('.', `${cfg.outputDir}/${cfg.name}.ts`)
+      const dir = dirname(filePath)
+      await fs.mkdir(dir, { recursive: true })
+      await fs.writeFile(filePath, ts as string)
     }
-    building = false;
-    return assets;
+    building = false
+    return assets
   }
 
   function debounced(ms: number, fn: () => void | Promise<void>) {
-    let timeout: number | undefined = undefined;
+    let timeout: number | undefined
     return () => {
-      if (timeout !== undefined) clearTimeout(timeout);
-      timeout = setTimeout(fn, ms) as never;
-    };
-  }
-
-  function watchDebounced(path: string, fn: () => void, ms = 100) {
-    return fsWatch(normalize(path), debounced(ms, fn));
-  }
-
-  function get(assetType: string) {
-    if (assets[assetType as import('fantasticon').AssetType]) {
-      return assets[assetType as import('fantasticon').AssetType];
+      if (timeout !== undefined)
+        clearTimeout(timeout)
+      timeout = setTimeout(fn, ms) as never
     }
-    return undefined;
   }
 
-  function watch(ws: () => WebSocketServer | undefined, event: string) {
-    if (watcher) return end;
+  function watchDebounced(path: string, fn: () => void, ms = 100): FSWatcher {
+    return fsWatch(normalize(path), debounced(ms, fn))
+  }
+
+  function get(assetType: string): string | Buffer | undefined {
+    if (assets[assetType as import('fantasticon').AssetType]) {
+      return assets[assetType as import('fantasticon').AssetType]
+    }
+    return undefined
+  }
+
+  function watch(ws: () => WebSocketServer | undefined, event: string): () => void {
+    if (watcher)
+      return end
     build().then(() => {
       watcher = watchDebounced(config.inputDir, async () => {
-        await build();
-        ws()?.send({ type: "custom", event, data: {} });
-      });
-    });
-    return end;
+        await build()
+        ws()?.send({ type: 'custom', event, data: {} })
+      })
+    })
+    return end
   }
 
-  function end() {
+  function end(): void {
     if (watcher) {
-      watcher.close();
-      watcher = undefined;
+      watcher.close()
+      watcher = undefined
     }
   }
 
-  function waitForBuild() {
+  function waitForBuild(): Promise<void> {
     return new Promise<void>((resolve) => {
       const interval = setInterval(() => {
         if (!building) {
-          clearInterval(interval);
-          resolve();
+          clearInterval(interval)
+          resolve()
         }
-      }, 100);
-    });
+      }, 100)
+    })
   }
 
   return {
@@ -107,7 +120,7 @@ function assetBuilder(config: RunnerOptions, generateFonts = defaultOptions.gene
     watch,
     end,
     waitForBuild,
-  };
+  }
 }
 
 export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = {}, meta) => {
@@ -118,7 +131,7 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = 
     ...config
   } = {
     ...defaultOptions,
-    ...options
+    ...options,
   }
 
   const name = `fantasticon:${config.name}`
@@ -132,17 +145,19 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = 
   return {
     name,
     resolveId(id) {
-      if (id.startsWith(name)) return virtualModuleId
+      if (id.startsWith(name))
+        return virtualModuleId
     },
     load(id) {
       if (id === virtualModuleId) {
         if (meta.framework === 'vite') {
-          return `import.${"meta"}.hot && import.${"meta"}.hot.on("${updateEvent}", () => {
+          return `import.${'meta'}.hot && import.${'meta'}.hot.on("${updateEvent}", () => {
             const link = document.querySelector("link[data-id='${name}']");
             const href = link.href.slice(0, link.href.indexOf("?")) + "?" + Date.now();
             link.setAttribute("href", href);
           });`
-        } else {
+        }
+        else {
           return `(function() {
             const link = document.querySelector("link[data-id='${name}']");
             if (link) {
@@ -156,7 +171,8 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = 
     async buildStart() {
       if (meta.framework === 'vite') {
         builder.watch(() => wss, updateEvent)
-      } else {
+      }
+      else {
         await builder.build()
       }
     },
@@ -174,8 +190,9 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = 
       handleHotUpdate(ctx) {
         wss = ctx.server.ws
       },
-      transformIndexHtml(html, ctx) {
-        if (!injectHtml) return html
+      transformIndexHtml(html) {
+        if (!injectHtml)
+          return html
 
         return {
           html,
@@ -183,45 +200,48 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = 
             {
               tag: 'link',
               attrs: {
-                rel: 'stylesheet',
-                type: 'text/css',
-                href: `/${`${config.name}.css`}?${Date.now()}`,
+                'rel': 'stylesheet',
+                'type': 'text/css',
+                'href': `/${`${config.name}.css`}?${Date.now()}`,
                 'data-id': config.name,
               },
               injectTo: 'head',
-            }
+            },
           ],
         }
       },
       configureServer(server) {
         server.middlewares.use(async (req, res, next) => {
-          if (!req.url) return next()
+          if (!req.url)
+            return next()
 
           const url = req.url.split('?')[0]
           if (url === `/${config.name}.css`) {
             await builder.waitForBuild()
-            const asset = builder.get('css');
-            console.log(asset)
+            const asset = builder.get('css')
             if (asset) {
-              res.setHeader('Content-Type', 'text/css');
-              res.end(asset.toString());
-            } else {
-              res.statusCode = 404;
-              res.end('Not Found');
+              res.setHeader('Content-Type', 'text/css')
+              res.end(asset.toString())
             }
-          } else if (new RegExp(`^/${config.name}\\.(woff2|woff|ttf)$`).test(url)) {
+            else {
+              res.statusCode = 404
+              res.end('Not Found')
+            }
+          }
+          else if (new RegExp(`^/${config.name}\\.(woff2|woff|ttf)$`).test(url)) {
             await builder.waitForBuild()
-            const assetType = url.split('.').pop() as import('fantasticon').AssetType;
-            const asset = builder.get(url.split('.')[1] as import('fantasticon').AssetType);
-            console.log(asset)
+            const assetType = url.split('.').pop() as import('fantasticon').AssetType
+            const asset = builder.get(url.split('.')[1] as import('fantasticon').AssetType)
             if (asset) {
-              res.setHeader('Content-Type', 'font/' + assetType);
-              res.end(asset as Buffer);
-            } else {
-              res.statusCode = 404;
-              res.end('Not Found');
+              res.setHeader('Content-Type', `font/${assetType}`)
+              res.end(asset as Buffer)
             }
-          } else {
+            else {
+              res.statusCode = 404
+              res.end('Not Found')
+            }
+          }
+          else {
             next()
           }
         })
@@ -232,17 +252,18 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = 
         id: 'index.html',
       },
       handler(code) {
-        if (!injectHtml || meta.framework === 'vite') return code
+        if (!injectHtml || meta.framework === 'vite')
+          return code
 
         return {
           code: code.replace(
             '</head>',
-            `<link rel="stylesheet" href="/${config.name}.css" data-id="${config.name}"></head>`
+            `<link rel="stylesheet" href="/${config.name}.css" data-id="${config.name}"></head>`,
           ),
           map: null,
         }
-      }
-    }
+      },
+    },
   }
 }
 
