@@ -1,6 +1,6 @@
 # unplugin-fantasticon
 
-[![NPM version](https://img.shields.io/npm/v/unplugin-fantasticon?color=a1b858&label=)](https://www.npmjs.com/package/unplugin-fantasticon)
+[![NPM version](https://img.shields.io/npm/v/unplugin-fantasticon?color=a1b858&label=NPM)](https://www.npmjs.com/package/unplugin-fantasticon)
 
 A [unplugin](https://github.com/unjs/unplugin) plugin to generate iconfonts from SVGs using [fantasticon](https://github.com/twbs/fantasticon).
 
