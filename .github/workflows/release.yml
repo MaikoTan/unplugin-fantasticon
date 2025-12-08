@@ -2,14 +2,15 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - slave
 
 jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v3
         with:
@@ -19,6 +20,26 @@ jobs:
         with:
           node-version: lts/*
 
-      - run: npx changelogithub
+      - name: Upgrade NPM to Latest
+        run: npm install -g npm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Publish to NPM
+        id: publish
+        uses: JS-DevTools/npm-publish@v4
+
+      - name: Create Tag
+        if: ${{ steps.publish.outputs.type }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag v${{ steps.publish.outputs.version }}
+          git push origin v${{ steps.publish.outputs.version }}
+
+      - name: Create Release
+        if: ${{ steps.publish.outputs.type }}
+        run: npx changelogithub
         env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
