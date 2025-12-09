@@ -94,22 +94,22 @@
   },
   "dependencies": {
     "fantasticon": "npm:@twbs/fantasticon@^3.1.0",
-    "unplugin": "^2.3.4"
+    "unplugin": "^2.3.11"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^4.13.2",
-    "@nuxt/kit": "^3.17.4",
-    "@nuxt/schema": "^3.17.4",
-    "@types/node": "^22.15.21",
-    "bumpp": "^10.1.1",
-    "eslint": "^9.27.0",
-    "nodemon": "^3.1.10",
-    "rollup": "^4.41.0",
-    "tsdown": "^0.12.0",
-    "tsx": "^4.19.4",
-    "typescript": "^5.8.3",
-    "vite": "^6.3.5",
-    "vitest": "^3.1.4",
-    "webpack": "^5.99.9"
+    "@antfu/eslint-config": "^4.19.0",
+    "@nuxt/kit": "^3.20.1",
+    "@nuxt/schema": "^3.20.1",
+    "@types/node": "^22.19.2",
+    "bumpp": "^10.3.2",
+    "eslint": "^9.39.1",
+    "nodemon": "^3.1.11",
+    "rollup": "^4.53.3",
+    "tsdown": "^0.12.9",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1",
+    "vitest": "^3.2.4",
+    "webpack": "^5.103.0"
   }
 }
