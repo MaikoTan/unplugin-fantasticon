@@ -86,6 +86,38 @@ describe('assetBuilder', () => {
     vi.restoreAllMocks()
   })
 
+  it('still writes to disk when a writeToDisk build is coalesced onto an in-flight build', async () => {
+    let release!: () => void
+    const generateFonts = vi.fn(async (_cfg: any, writeToDisk: boolean) => {
+      // Only the first (in-memory) build blocks; that is what makes the second,
+      // writeToDisk request get coalesced onto it.
+      if (!release) {
+        await new Promise<void>((r) => {
+          release = r
+        })
+      }
+      return {
+        assetsOut: {
+          css: writeToDisk ? '/* written */' : '/* in memory */',
+          woff2: new Uint8Array([0x77, 0x4F, 0x46, 0x32]),
+        },
+      }
+    })
+    const plugin = createPlugin({ generateFonts })
+
+    const devBuild = plugin.buildStart()
+    await new Promise(resolve => setTimeout(resolve, 20))
+    const prodBuild = plugin.writeBundle()
+    release()
+    await Promise.all([devBuild, prodBuild])
+
+    // The coalesced request must not be dropped just because a build was
+    // already running -- otherwise a slow machine emits no font files at all.
+    // A third build must still be able to see the result.
+    const res = await request(plugin, '/icons.css')
+    expect(res.body).toBe('/* written */')
+  })
+
   it('waitForBuild resolves after the in-flight build settles', async () => {
     let release!: () => void
     const generateFonts = vi.fn(async () => {
