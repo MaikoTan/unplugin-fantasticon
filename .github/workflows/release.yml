@@ -29,6 +29,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      # npm-publish defaults to ignore-scripts, so prepublishOnly never runs.
+      # Build explicitly so the published tarball contains dist/.
+      - name: Build
+        run: pnpm build
+
       - name: Publish to NPM
         id: publish
         uses: JS-DevTools/npm-publish@v4
