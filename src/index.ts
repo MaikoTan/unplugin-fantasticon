@@ -24,6 +24,18 @@ const defaultOptions = {
   assetTypes: ['css', 'html'] as import('fantasticon').OtherAssetType[],
 } satisfies Options
 
+/**
+ * Compare a `load` hook id against the virtual module id.
+ *
+ * webpack-family loaders pass the id through `path.normalize`, which on
+ * Windows turns the leading `\0` into `\\\0`. A strict `===` therefore misses
+ * the virtual module there and silently emits an empty module, so compare the
+ * trailing part instead.
+ */
+function isVirtualId(id: string, virtualModuleId: string): boolean {
+  return id === virtualModuleId || id.endsWith(virtualModuleId)
+}
+
 export interface AssetBuilder {
   build: (writeToDisk?: boolean) => Promise<Partial<Record<import('fantasticon').AssetType, string | Buffer>>>
   get: (assetType: string) => string | Buffer | undefined
@@ -212,10 +224,12 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = 
         return virtualModuleId
     },
     load(id) {
-      if (id === virtualModuleId) {
+      if (isVirtualId(id, virtualModuleId)) {
+        // The injected <link> uses `data-id=config.name`, so the selector must
+        // match it -- using the plugin name here would never match anything.
         if (meta.framework === 'vite') {
           return `import.${'meta'}.hot && import.${'meta'}.hot.on("${updateEvent}", () => {
-            const link = document.querySelector("link[data-id='${name}']");
+            const link = document.querySelector("link[data-id='${config.name}']");
             if (!link) return;
             const url = new URL(link.href);
             url.searchParams.set("t", Date.now());
@@ -224,7 +238,7 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = 
         }
         else {
           return `(function() {
-            const link = document.querySelector("link[data-id='${name}']");
+            const link = document.querySelector("link[data-id='${config.name}']");
             if (link) {
               const url = new URL(link.href);
               url.searchParams.set("t", Date.now());
@@ -329,6 +343,38 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = 
           }
         })
       },
+    },
+    webpack(compiler) {
+      // Webpack short-circuits any `scheme:` request into
+      // NormalModuleFactory#resolveForScheme before enhanced-resolve (where
+      // unplugin installs its resolveId hook) ever sees it, so the virtual
+      // module fails with `UnhandledSchemeError` on webpack. Point the scheme at
+      // the same virtual file unplugin's resolver would have produced; the load
+      // loader then strips the prefix and calls our `load` hook as usual.
+      const plugin = this as any
+      const virtualPrefix: string | undefined = plugin.__virtualModulePrefix
+      const vfs = plugin.__vfs
+      if (!virtualPrefix || !vfs)
+        return
+
+      compiler.hooks.normalModuleFactory.tap(name, (nmf: any) => {
+        nmf.hooks.resolveForScheme.for('fantasticon').tapAsync(name, async (resourceData: any, _data: any, cb: any) => {
+          try {
+            const file = join(virtualPrefix, encodeURIComponent(virtualModuleId))
+            // Register through unplugin's virtual-module store so the directory
+            // is removed on compiler shutdown instead of leaking into the repo.
+            if (!plugin.__vfsModules.has(file)) {
+              plugin.__vfsModules.add(file)
+              await vfs.writeModule(file, '')
+            }
+            resourceData.resource = file
+            cb()
+          }
+          catch (error) {
+            cb(error)
+          }
+        })
+      })
     },
     transform: {
       filter: {

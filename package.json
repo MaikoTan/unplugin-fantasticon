@@ -100,6 +100,7 @@
     "@antfu/eslint-config": "^4.19.0",
     "@nuxt/kit": "^3.20.1",
     "@nuxt/schema": "^3.20.1",
+    "@rspack/core": "^2.2.8",
     "@types/node": "^22.19.2",
     "bumpp": "^10.3.2",
     "eslint": "^9.39.1",
