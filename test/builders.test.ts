@@ -1,6 +1,6 @@
 import type { Plugin as VitePluginType } from 'vite'
 
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { rspack } from '@rspack/core'
@@ -192,13 +192,21 @@ describe('esbuild', () => {
 describe('vite', () => {
   it('builds and writes real font assets', async () => {
     const outputDir = join(workDir, 'fonts')
+    // Vite computes the emitted `index.html` fileName as
+    // `path.relative(config.root, id)`, and rollup rejects that name when it
+    // escapes the root. `config.root` is only `path.resolve`d (never
+    // realpath'd), whereas the plugin's `id` is canonicalised through
+    // realpath -- so on macOS, where `tmpdir()` is a symlink
+    // (/var -> /private/var), the relative path is "../../../../...".
+    // Realpath the root too so both sides agree.
     const root = join(workDir, 'app')
     await mkdir(join(root, 'src'), { recursive: true })
-    await writeFile(join(root, 'index.html'), '<html><head></head><body><script type="module" src="/src/main.js"></script></body></html>', 'utf8')
-    await writeFile(join(root, 'src', 'main.js'), 'console.log(1)\n', 'utf8')
+    const realRoot = await realpath(root)
+    await writeFile(join(realRoot, 'index.html'), '<html><head></head><body><script type="module" src="/src/main.js"></script></body></html>', 'utf8')
+    await writeFile(join(realRoot, 'src', 'main.js'), 'console.log(1)\n', 'utf8')
 
     await viteBuild({
-      root,
+      root: realRoot,
       logLevel: 'silent',
       build: { outDir: join(workDir, 'out'), write: true },
       plugins: [VitePlugin(options(outputDir)) as VitePluginType],

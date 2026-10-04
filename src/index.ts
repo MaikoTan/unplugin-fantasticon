@@ -107,6 +107,13 @@ function assetBuilder(config: RunnerOptions, generateFonts = defaultOptions.gene
     if (building) {
       console.warn('[fantasticon] Already building, skipping...')
       await pending
+      // `pending` includes the finally that clears `building`, so this
+      // recursion cannot re-enter the guard. It matters when the in-flight
+      // build was an in-memory one: returning its assets here would drop the
+      // writeToDisk request on the floor, so a `writeBundle` racing a dev
+      // `buildStart` would emit no font files at all.
+      if (writeToDisk)
+        return build(true)
       return assets
     }
 
