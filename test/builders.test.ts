@@ -45,6 +45,18 @@ async function writeEntry(name: string, contents: string): Promise<string> {
   return file
 }
 
+/**
+ * Farm resolves its runtime path relative to the build root; on Windows the
+ * system temp dir (C:) and the repo (D: on CI) are different drives, which
+ * panics inside Farm's native binding. Run Farm builds from a dir inside the
+ * repo so both paths stay on the same drive.
+ */
+async function useRepoWorkDir(): Promise<void> {
+  const previous = workDir
+  workDir = await mkdtemp(join(import.meta.dirname, '..', '.tmp-farm-'))
+  await rm(previous, { recursive: true, force: true })
+}
+
 function options(outputDir: string) {
   return {
     name: 'icons',
@@ -193,6 +205,7 @@ describe('esbuild', () => {
 
 describe('farm', () => {
   it('builds and writes real font assets', async () => {
+    await useRepoWorkDir()
     const outputDir = join(workDir, 'fonts')
     const entry = await writeEntry('entry.js', 'console.log(1)\n')
 
@@ -209,6 +222,7 @@ describe('farm', () => {
   })
 
   it('resolves the virtual module to the non-vite HMR stub', async () => {
+    await useRepoWorkDir()
     const outputDir = join(workDir, 'fonts')
     const entry = await writeEntry('entry.js', 'import \'fantasticon:icons\'\nconsole.log(1)\n')
 
