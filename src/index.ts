@@ -36,6 +36,20 @@ function isVirtualId(id: string, virtualModuleId: string): boolean {
   return id === virtualModuleId || id.endsWith(virtualModuleId)
 }
 
+/** Escape a literal string for use in a RegExp. */
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Object-hook filter for Farm, which only calls `load` for ids that pass it;
+ * without a filter unplugin treats every module as ours and throws when `load`
+ * returns undefined for a real file.
+ */
+function createVirtualIdFilter(virtualModuleId: string): { id: { include: RegExp[] } } {
+  return { id: { include: [new RegExp(`${escapeRegExp(virtualModuleId)}$`)] } }
+}
+
 export interface AssetBuilder {
   build: (writeToDisk?: boolean) => Promise<Partial<Record<import('fantasticon').AssetType, string | Buffer>>>
   get: (assetType: string) => string | Buffer | undefined
@@ -220,6 +234,33 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = 
 
   const builder = assetBuilder(config, generateFonts)
 
+  function loadVirtualModule(id: string): string | undefined {
+    if (!isVirtualId(id, virtualModuleId))
+      return
+
+    // The injected <link> uses `data-id=config.name`, so the selector must
+    // match it -- using the plugin name here would never match anything.
+    if (meta.framework === 'vite') {
+      return `import.${'meta'}.hot && import.${'meta'}.hot.on("${updateEvent}", () => {
+        const link = document.querySelector("link[data-id='${config.name}']");
+        if (!link) return;
+        const url = new URL(link.href);
+        url.searchParams.set("t", Date.now());
+        link.setAttribute("href", url.href);
+      });`
+    }
+    else {
+      return `(function() {
+        const link = document.querySelector("link[data-id='${config.name}']");
+        if (link) {
+          const url = new URL(link.href);
+          url.searchParams.set("t", Date.now());
+          link.setAttribute("href", url.href);
+        }
+      })();`
+    }
+  }
+
   return {
     name,
     resolveId(id) {
@@ -230,31 +271,12 @@ export const unpluginFactory: UnpluginFactory<Options | undefined> = (options = 
       if (id === name || id.startsWith(`${name}.`) || id.startsWith(`${name}/`) || id === `virtual:${name}`)
         return virtualModuleId
     },
-    load(id) {
-      if (isVirtualId(id, virtualModuleId)) {
-        // The injected <link> uses `data-id=config.name`, so the selector must
-        // match it -- using the plugin name here would never match anything.
-        if (meta.framework === 'vite') {
-          return `import.${'meta'}.hot && import.${'meta'}.hot.on("${updateEvent}", () => {
-            const link = document.querySelector("link[data-id='${config.name}']");
-            if (!link) return;
-            const url = new URL(link.href);
-            url.searchParams.set("t", Date.now());
-            link.setAttribute("href", url.href);
-          });`
-        }
-        else {
-          return `(function() {
-            const link = document.querySelector("link[data-id='${config.name}']");
-            if (link) {
-              const url = new URL(link.href);
-              url.searchParams.set("t", Date.now());
-              link.setAttribute("href", url.href);
-            }
-          })();`
-        }
-      }
-    },
+    // Farm's unplugin adapter throws when `load` returns undefined, so it needs
+    // an object hook whose filter excludes real modules; the other adapters
+    // handle an undefined result themselves.
+    load: meta.framework === 'farm'
+      ? { filter: createVirtualIdFilter(virtualModuleId), handler: loadVirtualModule }
+      : loadVirtualModule,
     async buildStart() {
       if (meta.framework === 'vite') {
         builder.watch(() => wss, updateEvent)

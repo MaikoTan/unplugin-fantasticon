@@ -3,6 +3,7 @@ import type { Plugin as VitePluginType } from 'vite'
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { build as farmBuild } from '@farmfe/core'
 import { rspack } from '@rspack/core'
 import { build as esbuildBuild } from 'esbuild'
 import { rollup } from 'rollup'
@@ -11,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import webpack from 'webpack'
 
 import EsbuildPlugin from '../src/esbuild'
+import FarmPlugin from '../src/farm'
 import RollupPlugin from '../src/rollup'
 import RspackPlugin from '../src/rspack'
 import VitePlugin from '../src/vite'
@@ -186,6 +188,43 @@ describe('esbuild', () => {
     })
 
     await expectFontArtifacts(outputDir)
+  })
+})
+
+describe('farm', () => {
+  it('builds and writes real font assets', async () => {
+    const outputDir = join(workDir, 'fonts')
+    const entry = await writeEntry('entry.js', 'console.log(1)\n')
+
+    await farmBuild({
+      root: workDir,
+      compilation: {
+        input: { bundle: entry },
+        output: { path: join(workDir, 'out') },
+      },
+      plugins: [FarmPlugin(options(outputDir)) as any],
+    })
+
+    await expectFontArtifacts(outputDir)
+  })
+
+  it('resolves the virtual module to the non-vite HMR stub', async () => {
+    const outputDir = join(workDir, 'fonts')
+    const entry = await writeEntry('entry.js', 'import \'fantasticon:icons\'\nconsole.log(1)\n')
+
+    await farmBuild({
+      root: workDir,
+      compilation: {
+        input: { bundle: entry },
+        output: { path: join(workDir, 'out') },
+      },
+      plugins: [FarmPlugin(options(outputDir)) as any],
+    })
+
+    const bundle = await readFile(join(workDir, 'out', 'bundle.js'), 'utf8')
+    expect(bundle).toContain('link[data-id=\'icons\']')
+    // Vite-only syntax must not leak into other builders.
+    expect(bundle).not.toContain('import.meta.hot')
   })
 })
 

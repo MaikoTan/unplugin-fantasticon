@@ -1,3 +1,4 @@
+import type { Dirent } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
@@ -94,7 +95,7 @@ export function validateSvg(source: string): string | undefined {
  * Returns a human-readable problem per offending file.
  */
 export async function findInvalidSvgs(dir: string): Promise<string[]> {
-  let entries: Awaited<ReturnType<typeof readdir>>
+  let entries: Dirent[]
   try {
     entries = await readdir(dir, { recursive: true, withFileTypes: true })
   }

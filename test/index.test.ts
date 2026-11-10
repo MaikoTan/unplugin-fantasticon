@@ -1,5 +1,3 @@
-import type { Plugin } from 'vite'
-
 import { Buffer } from 'node:buffer'
 import { mkdtemp, readdir, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -15,7 +13,7 @@ function createPlugin(overrides: Record<string, any> = {}) {
     inputDir: 'playground/src/icons',
     outputDir: 'dist/fonts',
     ...overrides,
-  } as any, meta) as Plugin & Record<string, any>
+  } as any, meta) as any
 }
 
 /** Run the `configureServer` middleware against a fake req/res pair. */
